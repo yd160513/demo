@@ -9,6 +9,11 @@ const routes = [
         path: '/watermark',
         name: 'watermark',
         component: () => import('./../components/watermark.vue')
+    },
+    {
+        path: '/theme',
+        name: 'theme',
+        component: () => import('./../components/theme.vue')
     }
 ]
 
