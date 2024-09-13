@@ -1,5 +1,5 @@
 <script setup>
-import router from "./../router/index.js";
+import router from "../router/index.js";
 
 const goto = (name) => {
   if (!name) return console.log('gotoWatermark', 'name is required');

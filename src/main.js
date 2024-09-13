@@ -1,11 +1,11 @@
 import { createApp } from 'vue'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
-import './styles/light.css'
-import './styles/dark.css'
-import './styles/global.css'
-import App from './App.vue'
-import router from './router/index.js'
+import './renderer/styles/light.css'
+import './renderer/styles/dark.css'
+import './renderer/styles/global.css'
+import App from './renderer/App.vue'
+import router from './renderer/router/index.js'
 
 const app = createApp(App)
 app.use(ElementPlus)
