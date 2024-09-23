@@ -26,7 +26,7 @@ function createWindow() {
         width: 800,
         height: 600,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.cjs'), // 改为 .cjs，否则 preload 会识别为 CommonJS，但是项目整体采用的是 ESModule，就会报错。
+            preload: path.join(__dirname, 'preload.cjs'), // 改为 .cjs 是因为项目整体采用的是 ESModule，但是 preload 选项只支持 CommonJS，所以需要将其显示的指定为 CommonJS。
             nodeIntegration: true,
             contextIsolation: false,
         },
