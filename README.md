@@ -116,7 +116,7 @@ body {
 - 在 ESModule 中 __dirname 和 __filename 是不可用的，可以通过 import.meta.url 来获取当前文件的路径。
   > 定义 __filename: `const __filename = fileURLToPath(import.meta.url);`  
   > 定义 __dirname: `const __dirname = path.dirname(__filename);`
-- 引入 preload.js 时需要改为 .cjs，否则 preload 会识别为 CommonJS，但是项目整体采用的是 ESModule，就会报错。
+- 引入 preload.js 时需要改为 .cjs。改为 .cjs 是因为项目整体采用的是 ESModule，但是 preload 选项只支持 CommonJS，所以需要将其显示的指定为 CommonJS。
   ```js
   webPreferences: {
     preload: path.join(__dirname, 'preload.cjs')
