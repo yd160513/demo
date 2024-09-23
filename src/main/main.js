@@ -21,7 +21,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 function createWindow() {
-    log.info('preload.js ======', __dirname, path.join(__dirname, 'preload.js'), import(path.join(__dirname, 'preload.js')));
+    log.info('preload.js ======', __dirname, path.join(__dirname, 'preload.js'));
     const win = new BrowserWindow({
         width: 800,
         height: 600,

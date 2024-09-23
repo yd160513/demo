@@ -5,6 +5,7 @@
   - [x] 通过一个命令即启动 Electron 也启动 web 服务；Electron 退出时关闭 web 服务。
   - [x] 项目整体采用 ESModule
   - [x] 区分开发环境和生产环境，加载不同的 URL
+    - [ ] 生产环境下采用自定义协议加载，那么如何调试？
   - [x] 通过自定义协议加载资源
   - [ ] 日志收集
   - [ ] 崩溃采集
@@ -13,6 +14,7 @@
   - [ ] sqlite 的相关配置
   - [ ] 主进程热更新
   - [ ] 新老版本不同协议间的配置同步
+  - [x] 项目限制 node 及 npm 版本
 
 # 项目搭建遇到的问题
 ## 使用 sass
@@ -219,8 +221,6 @@ protocol.handle('app', async (request) => {
 > 那直接 const filePath = path.normalize(url) 不就可以了吗？
 > 不可以，因为需要获取到文件的绝对路径，而 path.normalize(url) 只是将 url 中的斜杠进行规范化，不会获取到文件的绝对路径。
 
-## 生产环境下采用自定义协议加载，那么如何调试？
-
 ## electron 采用 ESModule 形式加载对应处理
 ### 设置方式
 在 package.json 中设置 type 为 module： 这样可以使整个项目默认使用 ESModule。  
@@ -240,4 +240,58 @@ npm install -g asar
 asar extract <path-to-asar-file> <output-directory>
 ```
 
+## 项目限制 node 及 npm 版本
+### 设置方式
+1. 在 package.json 中设置 engines 字段:  
+```json
+{
+  "engines": {
+    "node": "20.17.0",
+    "npm": "10.8.2"
+  }
+}
+```
+2. 设置 preinstall 字段并定义对应脚本:   
+```json
+{
+  "scripts": {
+    "preinstall": "node check-node-version.js"
+  }
+}
+```
+```js
+// check-node-version.js
+import semver from 'semver';
+/**
+ * TODO: 增加 assert { type: 'json' } 的原因:
+ * 1. package.json 设置了 "type": "module", 导致项目是按照 ESModule 的方式加载模块的。
+ * 如果不增加 assert { type: 'json' }，那么 import packageJson from '../package.json' 会报错:
+ *      TypeError [ERR_IMPORT_ASSERTION_TYPE_MISSING]: Module "file:///xxx/xxx/xxx/demo/package.json" needs an import attribute of type "json"
+ * 提示需要明确的类型断言来确定文件的类型。
+ */
+import packageJson from '../package.json' assert { type: 'json' };
 
+const requiredVersion = packageJson.engines.node;
+const currentVersion = process.version;
+
+console.log('当前 Node.js 版本：', currentVersion);
+console.log('要求 Node.js 版本：', requiredVersion);
+
+if (!semver.satisfies(currentVersion, requiredVersion)) {
+  console.error(`当前 Node.js 版本为 ${currentVersion}，但此项目要求 Node.js 版本为 ${requiredVersion}。请更新 Node.js 版本。`);
+  process.exit(1);
+}
+
+console.log('Node.js 版本检查通过。');
+
+```
+### 注意点
+#### 只在 package.json 中设置 engines 字段，不设置 preinstall 字段
+在执行 `npm install` 时，会提示当前 Node.js 版本不符合要求，但是不会终止安装。
+```bash
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'my-vue-app@0.0.0',
+npm warn EBADENGINE   required: { node: '14.16.0' },
+npm warn EBADENGINE   current: { node: 'v20.17.0', npm: '10.8.2' }
+npm warn EBADENGINE }
+```
