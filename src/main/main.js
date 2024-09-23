@@ -1,14 +1,12 @@
 const { app, BrowserWindow, net, protocol } = require('electron');
 const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
-const log = require('electron-log');
+const { log } = require('./logger')
 const reload = require('electron-reload')
-
-log.info('__dirname', __dirname, path.join(__dirname, '../../'))
 
 // 是否是开发环境
 const isDev = !app.isPackaged;
-log.info('isDev:', isDev);
+log.info('是否是开发环境:', isDev);
 
 // 开发环境下启动热更新
 if (isDev) {
@@ -30,7 +28,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 function createWindow() {
-    log.info('preload.js ======', __dirname, path.join(__dirname, 'preload.js'));
+    log.info('preload.js 的加载路径:', path.join(__dirname, 'preload.js'));
     const win = new BrowserWindow({
         width: 800,
         height: 600,
@@ -50,7 +48,7 @@ function createWindow() {
 
     // 打印当前加载的 URL
     win.webContents.on('did-finish-load', () => {
-        log.info('Loaded URL:', win.webContents.getURL());
+        log.info('did-finish-load callback 触发，Loaded URL:', win.webContents.getURL());
     });
 
 }
@@ -62,7 +60,6 @@ app.on('ready', () => {
         log.info('request.url:', request.url, __dirname);
         // request.url 是 win.loadURL 传入的: app://dist/web/index.html。
         const url = request.url.slice('app://'.length); // 去掉 'app://' 部分
-        log.info('url: ', url)
         const filePath = path.normalize(path.join(__dirname, '../../', url))
         log.info('filePath: ', filePath);
         const fileUrl = pathToFileURL(filePath).toString();
@@ -97,6 +94,6 @@ app.on('activate', () => {
 
 // 应用退出
 app.on('before-quit', () => {
-    console.log('before-quit');
+    log.info('before-quit 事件触发');
     app.exit()
 });
