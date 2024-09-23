@@ -14,7 +14,13 @@ log.info('isDev:', isDev);
 if (isDev) {
     reload(__dirname, {
         electron: path.join(__dirname, '../../node_modules', '.bin', 'electron'),
-        forceHardReset: true,
+        forceHardReset: true, // 主进程入口文件关联的所有文件发生变化时，强制重启；而不是只监听主进程入口文件这一个文件的变化。
+        /**
+         * 应用程序覆盖了一些默认设置 quit 或者 close 操作（例如，关闭最后一个应用程序窗口会隐藏该窗口而不是退出应用程序）。
+         * 在这种情况下，应用程序可能不会重新启动，因为 Electron Reload 无法退出应用程序。
+         * 为了解决这个问题，可以使用 hardResetMethod 选项来覆盖默认的退出操作。
+         */
+        hardResetMethod: 'quit'
     });
 }
 
