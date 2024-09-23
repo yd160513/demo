@@ -2,12 +2,20 @@ const { app, BrowserWindow, net, protocol } = require('electron');
 const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
 const log = require('electron-log');
+const reload = require('electron-reload')
 
 log.info('__dirname', __dirname, path.join(__dirname, '../../'))
 
 // 是否是开发环境
 const isDev = !app.isPackaged;
 log.info('isDev:', isDev);
+
+// 开发环境下启动热更新
+if (isDev) {
+    reload(__dirname, {
+        electron: path.join(__dirname, '../../node_modules', '.bin', 'electron')
+    });
+}
 
 // 赋予该自定义协议特定的权限（如安全性、标准协议特性等）
 protocol.registerSchemesAsPrivileged([
