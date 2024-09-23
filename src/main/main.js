@@ -13,7 +13,8 @@ log.info('isDev:', isDev);
 // 开发环境下启动热更新
 if (isDev) {
     reload(__dirname, {
-        electron: path.join(__dirname, '../../node_modules', '.bin', 'electron')
+        electron: path.join(__dirname, '../../node_modules', '.bin', 'electron'),
+        forceHardReset: true,
     });
 }
 
