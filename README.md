@@ -3,7 +3,7 @@
 - [x] 切换主题
 - [x] 集成 Electron
   - [x] 通过一个命令即启动 Electron 也启动 web 服务；Electron 退出时关闭 web 服务。
-  - [x] 项目整体采用 ESModule
+  - [x] 项目整体采用 ESModule (通用性不高，后面恢复成 CommonJS)
   - [x] 区分开发环境和生产环境，加载不同的 URL
     - [ ] 生产环境下采用自定义协议加载，那么如何调试？
   - [x] 通过自定义协议加载资源
@@ -295,3 +295,8 @@ npm warn EBADENGINE   required: { node: '14.16.0' },
 npm warn EBADENGINE   current: { node: 'v20.17.0', npm: '10.8.2' }
 npm warn EBADENGINE }
 ```
+## vite 项目中没有采用 ts，npm run dev 时提示: The CJS build of Vite's Node API is deprecated. 
+原因:
+vite 配置文件 vite.config.js 以 js 结尾，vite 会默认采用 CommonJS 的方式加载配置文件，所以会提示 The CJS build of Vite's Node API is deprecated。
+解决方式: 将 vite.config.js 改为 vite.config.cjs。
+> See https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.

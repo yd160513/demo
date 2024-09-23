@@ -1,13 +1,7 @@
-// const { app, BrowserWindow, protocol } = require('electron');
-// const path = require('path');
-import { app, BrowserWindow, net, protocol } from 'electron';
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-import log from 'electron-log';
-
-// 获取当前模块的文件路径和目录名
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { app, BrowserWindow, net, protocol } = require('electron');
+const path = require('path');
+const { fileURLToPath, pathToFileURL } = require('url');
+const log = require('electron-log');
 
 log.info('__dirname', __dirname, path.join(__dirname, '../../'))
 
@@ -26,7 +20,7 @@ function createWindow() {
         width: 800,
         height: 600,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.cjs'), // 改为 .cjs 是因为项目整体采用的是 ESModule，但是 preload 选项只支持 CommonJS，所以需要将其显示的指定为 CommonJS。
+            preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: true,
             contextIsolation: false,
         },
