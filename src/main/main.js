@@ -1,8 +1,12 @@
 const { app, BrowserWindow, net, protocol } = require('electron');
 const path = require('path');
-const { fileURLToPath, pathToFileURL } = require('url');
-const { log } = require('./logger')
-const reload = require('electron-reload')
+const { pathToFileURL } = require('url');
+const { log, getLogDirectory, compressLogFilesToZip } = require('./logger')
+const { formatDate } = require('./utils');
+const packageJson = require('../../package.json');
+
+const projectName = packageJson.name;
+const projectVersion = packageJson.version;
 
 // 是否是开发环境
 const isDev = !app.isPackaged;
@@ -10,7 +14,7 @@ log.info('是否是开发环境:', isDev);
 
 // 开发环境下启动热更新
 if (isDev) {
-    reload(__dirname, {
+    require('electron-reload')(__dirname, {
         electron: path.join(__dirname, '../../node_modules', '.bin', 'electron'),
         forceHardReset: true, // 主进程入口文件关联的所有文件发生变化时，强制重启；而不是只监听主进程入口文件这一个文件的变化。
         /**
@@ -49,6 +53,14 @@ function createWindow() {
     // 打印当前加载的 URL
     win.webContents.on('did-finish-load', () => {
         log.info('did-finish-load callback 触发，Loaded URL:', win.webContents.getURL());
+        log.info('启动定时器，5秒后压缩日志文件')
+        setTimeout(() => {
+            log.info('开始压缩日志文件');
+            const logDir = getLogDirectory();
+            compressLogFilesToZip(logDir, `${projectName}-${projectVersion}_${formatDate(new Date(), 'date', true)}.zip`).then(zipFilePath => {
+                log.info('日志文件压缩完成，压缩包路径:', zipFilePath);
+            })
+        }, 5000);
     });
 
 }
