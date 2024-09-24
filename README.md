@@ -300,3 +300,71 @@ npm warn EBADENGINE }
 vite 配置文件 vite.config.js 以 js 结尾，vite 会默认采用 CommonJS 的方式加载配置文件，所以会提示 The CJS build of Vite's Node API is deprecated。
 解决方式: 将 vite.config.js 改为 vite.config.cjs。
 > See https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+## 日志收集
+通过 electron-log 实现。 
+- 主进程
+  > [具体实现](https://github.com/yd160513/demo/blob/main/src/main/logger.js)
+  
+  封装的方法有:
+  - 压缩日志目录中的日志文件
+  - 删除七天之前的日志文件
+  
+- 渲染进程
+  > [具体实现](https://github.com/yd160513/demo/blob/main/src/renderer/utils/logger.js)
+  
+  方便业务使用则重写了 console 的部分方法。
+
+## 崩溃、异常采集
+通过 electron 提供的 crash-reporter + api 实现，具体配置可见:
+
+- 主进程配置
+  ```js
+  // 统一不同平台的崩溃日志存储路径
+  app.setPath('crashDumps', path.join(app.getPath('userData'), 'crashes'));
+  // 启动崩溃报告器
+  crashReporter.start({
+    uploadToServer: false
+  })
+  
+  // 监听渲染进程崩溃事件
+  app.on('render-process-gone', (event, webContents, details) => {
+    log.error('渲染进程奔溃，render-process-gone 事件触发', details);
+  })
+  // 监听子进程崩溃事件
+  app.on('child-process-gone', (event, details) => {
+    log.error('子进程奔溃，child-process-gone 事件触发', details);
+  })
+  // 监听未捕获的 JavaScript 异常事件
+  process.on('uncaughtException', (error) => {
+    log.error('监听到未捕获的 JavaScript 异常事件，uncaughtException 事件触发', error);
+    app.exit();
+  })
+  // 监听未处理的 Promise 拒绝事件
+  process.on('unhandledRejection', (reason, promise) => {
+    log.error('监听到未处理的 Promise 拒绝事件，unhandledRejection 事件触发', reason, promise);
+    app.exit();
+  })
+  ```
+
+- 渲染进程配置
+  ```js
+  // 捕获同步错误
+  window.onerror = function (message, source, lineno, colno, error) {
+      console.error('捕获到同步错误:', { message, source, lineno, colno, error });
+      // 这里可以添加上报错误的逻辑
+  };
+  
+  // 捕获未处理的 Promise 拒绝
+  window.onunhandledrejection = function (event) {
+      console.error('捕获到未处理的 Promise 拒绝:', event.reason);
+      // 这里可以添加上报错误的逻辑
+  };
+  
+  export function setupGlobalErrorHandler(app) {
+      app.config.errorHandler = (err, vm, info) => {
+          console.error('捕获到 Vue 错误:', { err, vm, info });
+          // 这里可以添加上报错误的逻辑
+      }
+  }
+  ```
