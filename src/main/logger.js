@@ -4,6 +4,8 @@ const fs = require('fs');
 const { removeSync, formatDate } = require('./utils');
 const archiver = require("archiver");
 
+log.initialize();
+
 // 设置日志文件名基础名称
 log.transports.file.fileName = `${formatDate(new Date(), 'date', true)}.log`;
 

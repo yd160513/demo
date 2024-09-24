@@ -6,6 +6,7 @@ import './renderer/styles/dark.css'
 import './renderer/styles/global.css'
 import App from './renderer/App.vue'
 import router from './renderer/router/index.js'
+import './renderer/utils/logger'
 import { setupGlobalErrorHandler } from './renderer/utils/errorHandler'
 
 const app = createApp(App)
