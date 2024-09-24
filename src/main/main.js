@@ -1,4 +1,4 @@
-const { app, BrowserWindow, net, protocol } = require('electron');
+const { app, BrowserWindow, net, protocol, crashReporter } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { log, getLogDirectory, compressLogFilesToZip } = require('./logger')
@@ -25,6 +25,32 @@ if (isDev) {
         hardResetMethod: 'quit'
     });
 }
+
+// 统一不同平台的崩溃日志存储路径
+app.setPath('crashDumps', path.join(app.getPath('userData'), 'crashes'));
+// 启动崩溃报告器
+crashReporter.start({
+    uploadToServer: false
+})
+
+// 监听渲染进程崩溃事件
+app.on('render-process-gone', (event, webContents, details) => {
+    log.error('渲染进程奔溃，render-process-gone 事件触发', details);
+})
+// 监听子进程崩溃事件
+app.on('child-process-gone', (event, details) => {
+    log.error('子进程奔溃，child-process-gone 事件触发', details);
+})
+// 监听未捕获的 JavaScript 异常事件
+process.on('uncaughtException', (error) => {
+    log.error('监听到未捕获的 JavaScript 异常事件，uncaughtException 事件触发', error);
+    app.exit();
+})
+// 监听未处理的 Promise 拒绝事件
+process.on('unhandledRejection', (reason, promise) => {
+    log.error('监听到未处理的 Promise 拒绝事件，unhandledRejection 事件触发', reason, promise);
+    app.exit();
+})
 
 // 赋予该自定义协议特定的权限（如安全性、标准协议特性等）
 protocol.registerSchemesAsPrivileged([
