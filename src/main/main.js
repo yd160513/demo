@@ -1,16 +1,12 @@
 const { app, BrowserWindow, net, protocol, crashReporter } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const { log, getLogDirectory, compressLogFilesToZip } = require('./logger')
-const { formatDate } = require('./utils');
-const packageJson = require('../../package.json');
-
-const projectName = packageJson.name;
-const projectVersion = packageJson.version;
+const logger = require('./logger')
+const { compressLogFilesToZip, formatDate } = require('./utils');
 
 // 是否是开发环境
 const isDev = !app.isPackaged;
-log.info('是否是开发环境:', isDev);
+logger.info('是否是开发环境:', isDev);
 
 // 开发环境下启动热更新
 if (isDev) {
@@ -35,20 +31,20 @@ crashReporter.start({
 
 // 监听渲染进程崩溃事件
 app.on('render-process-gone', (event, webContents, details) => {
-    log.error('渲染进程奔溃，render-process-gone 事件触发', details);
+    logger.error('渲染进程奔溃，render-process-gone 事件触发', details);
 })
 // 监听子进程崩溃事件
 app.on('child-process-gone', (event, details) => {
-    log.error('子进程奔溃，child-process-gone 事件触发', details);
+    logger.error('子进程奔溃，child-process-gone 事件触发', details);
 })
 // 监听未捕获的 JavaScript 异常事件
 process.on('uncaughtException', (error) => {
-    log.error('监听到未捕获的 JavaScript 异常事件，uncaughtException 事件触发', error);
+    logger.error('监听到未捕获的 JavaScript 异常事件，uncaughtException 事件触发', error);
     app.exit();
 })
 // 监听未处理的 Promise 拒绝事件
 process.on('unhandledRejection', (reason, promise) => {
-    log.error('监听到未处理的 Promise 拒绝事件，unhandledRejection 事件触发', reason, promise);
+    logger.error('监听到未处理的 Promise 拒绝事件，unhandledRejection 事件触发', reason, promise);
     app.exit();
 })
 
@@ -58,7 +54,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 function createWindow() {
-    log.info('preload.js 的加载路径:', path.join(__dirname, 'preload.js'));
+    logger.info('preload.js 的加载路径:', path.join(__dirname, 'preload.js'));
     const win = new BrowserWindow({
         width: 800,
         height: 600,
@@ -78,13 +74,12 @@ function createWindow() {
 
     // 打印当前加载的 URL
     win.webContents.on('did-finish-load', () => {
-        log.info('did-finish-load callback 触发，Loaded URL:', win.webContents.getURL());
-        log.info('启动定时器，5秒后压缩日志文件')
+        logger.info('did-finish-load callback 触发，Loaded URL:', win.webContents.getURL());
+        logger.info('启动定时器，5秒后压缩日志文件')
         setTimeout(() => {
-            log.info('开始压缩日志文件');
-            const logDir = getLogDirectory();
-            compressLogFilesToZip(logDir, `${projectName}-${projectVersion}_${formatDate(new Date(), 'date', true)}.zip`).then(zipFilePath => {
-                log.info('日志文件压缩完成，压缩包路径:', zipFilePath);
+            logger.info('开始压缩日志文件');
+            compressLogFilesToZip().then(zipFilePath => {
+                logger.info('日志文件压缩完成，压缩包路径:', zipFilePath);
             })
         }, 5000);
     });
@@ -95,13 +90,13 @@ app.on('ready', () => {
 
     // 使用 protocol.handle 注册自定义协议 app
     protocol.handle('app', async (request) => {
-        log.info('request.url:', request.url, __dirname);
+        logger.info('request.url:', request.url, __dirname);
         // request.url 是 win.loadURL 传入的: app://dist/web/index.html。
         const url = request.url.slice('app://'.length); // 去掉 'app://' 部分
         const filePath = path.normalize(path.join(__dirname, '../../', url))
-        log.info('filePath: ', filePath);
+        logger.info('filePath: ', filePath);
         const fileUrl = pathToFileURL(filePath).toString();
-        log.info('fileUrl:', fileUrl);
+        logger.info('fileUrl:', fileUrl);
 
         return net.fetch(fileUrl);
     });
@@ -111,7 +106,7 @@ app.on('ready', () => {
     //     // request.url 是 win.loadURL 传入的: app://dist/web/index.html。
     //     const url = request.url.slice('app://'.length); // 去掉 'app://' 部分
     //     const filePath = path.normalize(path.join(__dirname, '../../', url))
-    //     log.info('app protocol:', __dirname, filePath);
+    //     logger.info('app protocol:', __dirname, filePath);
     //     callback({ path: filePath });
     // });
 
@@ -132,6 +127,6 @@ app.on('activate', () => {
 
 // 应用退出
 app.on('before-quit', () => {
-    log.info('before-quit 事件触发');
+    logger.info('before-quit 事件触发');
     app.exit()
 });

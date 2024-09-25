@@ -1,6 +1,11 @@
 const fs = require('fs');
 const path = require('path');
-const archiver = require('archiver');
+const archiver = require("archiver");
+const logger = require('./logger')
+const packageJson = require('../../package.json');
+
+const projectName = packageJson.name;
+const projectVersion = packageJson.version;
 
 // 删除指定路径下的文件或目录
 const removeSync = (targetPath) => {
@@ -26,6 +31,87 @@ const removeSync = (targetPath) => {
     }
 }
 
+// 获取日志存储目录
+const getLogDirectory = () => {
+    /**
+     * electron-logger 日志存储目录
+     * ---
+     * path.dirname() 的作用:
+     * eg: logPath 为 /home/user/docs/file.txt
+     * path.dirname(logPath) 为 /home/user/docs
+     */
+    const logPath = path.dirname(logger.transports.file.getFile().path);
+    return logPath;
+}
+
+// 删除七天之前的日志文件
+const deleteOldLogs = () => {
+    const logDir = getLogDirectory();
+    // 读取日志目录下的所有文件
+    const files = fs.readdirSync(logDir);
+    const now = new Date();
+
+    // 过滤出七天之前的日志文件
+    const expiredFiles = files.filter(file => {
+        const filePath = path.join(logDir, file);
+        const stats = fs.statSync(filePath);
+        const fileAgeInDays = (now - new Date(stats.mtime)) / (1000 * 60 * 60 * 24);
+        return fileAgeInDays > 7;
+    });
+
+    logger.info('七天之前的日志文件: ', expiredFiles);
+
+    expiredFiles.forEach(file => {
+        const filePath = path.join(logDir, file);
+        removeSync(filePath);
+        logger.info(`Deleted old logger file: ${filePath}`);
+    })
+    logger.info('删除七天之前的日志文件完成');
+}
+
+// 压缩日志目录中的日志文件
+const compressLogFilesToZip = () => {
+    return new Promise((resolve, reject) => {
+        const compressDate = formatDate(new Date(), 'datetime', true);
+        const logDir = getLogDirectory();
+        const zipFileName = `${projectName}-${projectVersion}-logs_${compressDate}.zip`;
+        // 读取目录下的所有文件
+        const files = fs.readdirSync(logDir);
+        // 过滤出所有 .log 文件
+        const logFiles = files.filter(file => file.endsWith('.log'));
+
+        // 创建一个写入流，用于生成 zip 压缩包
+        const zipFilePath = path.join(logDir, zipFileName);
+        const output = fs.createWriteStream(zipFilePath);
+        const archive = archiver('zip', {
+            zlib: { level: 9 } // 设置压缩级别
+        });
+
+        // 监听流事件：完成和错误
+        output.on('close', () => {
+            logger.info(`Compressed ${archive.pointer()} total bytes`);
+            logger.info(`Zip file has been created at: ${zipFilePath}`);
+            resolve(zipFilePath);
+        });
+
+        archive.on('error', (err) => {
+            reject(err);
+        });
+
+        // 将压缩包的输出流绑定到文件流
+        archive.pipe(output);
+
+        // 将所有 .log 文件添加到压缩包中
+        logFiles.forEach(file => {
+            const filePath = path.join(logDir, file);
+            archive.file(filePath, { name: file });
+        });
+
+        // 完成压缩过程
+        archive.finalize();
+    })
+}
+
 const _formatNormalize = (formatter) => {
 
     if (typeof formatter === 'function') return formatter
@@ -37,7 +123,7 @@ const _formatNormalize = (formatter) => {
     if (formatter === 'date') {
         formatter = 'yyyy-MM-dd'
     } else if (formatter === 'datetime') {
-        formatter = 'yyyy-MM-dd hh:mm:ss'
+        formatter = 'yyyy-MM-dd HH:mm:ss'
     }
 
     const formatterFunc = (dateInfo) => {
@@ -53,7 +139,7 @@ const _formatNormalize = (formatter) => {
  * 格式化时间
  */
 const formatDate = (date, formatter, isPad = false) => {
-    // log.info('待格式化的时间:', date)
+    logger.info('待格式化的时间:', date)
     formatter = _formatNormalize(formatter)
     const dateInfo = {
         yyyy: date.getFullYear(),
@@ -65,11 +151,14 @@ const formatDate = (date, formatter, isPad = false) => {
         ms: isPad ? String(date.getMilliseconds()).padStart(3, '0') : date.getMilliseconds()
     }
     const formattedDate = formatter(dateInfo)
-    // log.info('格式化后的时间:', formattedDate)
+    logger.info('格式化后的时间:', formattedDate)
     return formattedDate
 }
 
 module.exports = {
     removeSync,
-    formatDate
+    getLogDirectory,
+    deleteOldLogs,
+    compressLogFilesToZip,
+    formatDate,
 }
