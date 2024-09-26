@@ -1,4 +1,4 @@
-const { app, BrowserWindow, net, protocol, crashReporter } = require('electron');
+const { app, BrowserWindow, net, protocol, crashReporter, nativeImage } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const logger = require('./logger')
@@ -10,6 +10,9 @@ logger.debug('应用启动时间: ', formatDate(new Date(), 'datetime', true));
 // 是否是开发环境
 const isDev = !app.isPackaged;
 logger.info('是否是开发环境:', isDev);
+
+// 应用图标
+const appIcon = nativeImage.createFromPath(path.join(__dirname, '../../public/icons/png/256x256.png'));
 
 // 开发环境下启动热更新
 if (isDev) {
@@ -60,6 +63,7 @@ function createOtherWindow() {
     const win = new BrowserWindow({
         width: 500,
         height: 500,
+        icon: appIcon,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: true,
@@ -84,6 +88,7 @@ function createMainWindow() {
     const win = new BrowserWindow({
         width: 800,
         height: 600,
+        icon: appIcon,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: true,
@@ -132,6 +137,9 @@ ipcMainInvoke('testToMainWithResponse', (event, ...args) => {
 })
 
 app.on('ready', () => {
+
+    // 设置 dock 图标(开发环境下生效)
+    app.dock.setIcon(appIcon)
 
     // 使用 protocol.handle 注册自定义协议 app
     protocol.handle('app', async (request) => {

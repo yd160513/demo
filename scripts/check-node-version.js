@@ -1,4 +1,4 @@
-import semver from 'semver';
+const semver = require('semver');
 /**
  * TODO: 增加 assert { type: 'json' } 的原因:
  * 1. package.json 设置了 "type": "module", 导致项目是按照 ESModule 的方式加载模块的。
@@ -6,7 +6,8 @@ import semver from 'semver';
  *      TypeError [ERR_IMPORT_ASSERTION_TYPE_MISSING]: Module "file:///xxx/xxx/xxx/demo/package.json" needs an import attribute of type "json"
  * 提示需要明确的类型断言来确定文件的类型。
  */
-import packageJson from '../package.json' assert { type: 'json' };
+// import packageJson from '../package.json' assert { type: 'json' };
+const packageJson = require('../package.json');
 
 const requiredVersion = packageJson.engines.node;
 const currentVersion = process.version;

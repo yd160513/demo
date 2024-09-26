@@ -46,7 +46,6 @@ onMounted(() => {
 
 <template>
   <div class="root">
-    123
     <router-view></router-view>
   </div>
 </template>

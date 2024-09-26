@@ -1,5 +1,6 @@
 {
   "name": "demo",
+  "description": "通过 vite + vue3 + Electron 实现的功能点 demo。",
   "private": true,
   "version": "0.0.0",
   "main": "src/main/main.js",
@@ -8,15 +9,19 @@
     "dev:pc": "concurrently --kill-others \"npm run dev:web\" \"npm run electron:serve\"",
     "electron:serve": "wait-on http://localhost:5173 && electron .",
     "build:web": "vite build",
-    "build:pc": "npm run clean && npm run build:web && electron-builder",
+    "build:pc": "npm run build:web && electron-builder",
+    "build:multiple": "node scripts/build-multiple-versions.js",
     "clean": "rimraf dist",
-    "preinstall": "node scripts/check-node-version.js"
+    "generate:icons": "electron-icon-builder --input=public/ahao.png --output=public",
+    "preinstall": "node scripts/check-node-version.js",
+    "postinstall": "electron-builder install-app-deps"
   },
   "engines": {
     "node": "20.17.0",
     "npm": "10.8.2"
   },
   "build": {
+    "appId": "com.demo.app",
     "asar": true,
     "productName": "demo",
     "directories": {
@@ -25,13 +30,23 @@
     "files": [
       "dist/web/**/*",
       "src/main/**/*"
-    ]
+    ],
+    "mac": {
+      "icon": "public/icons/mac/icon.icns"
+    },
+    "win": {
+      "icon": "public/icons/win/icon.ico"
+    },
+    "linux": {
+      "icon": "public/icons/png"
+    }
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.4",
     "concurrently": "^9.0.1",
     "electron": "^32.1.2",
     "electron-builder": "^25.0.5",
+    "electron-icon-builder": "^2.0.1",
     "electron-reload": "^2.0.0-alpha.1",
     "element-plus": "^2.8.3",
     "rimraf": "^6.0.1",
