@@ -2,7 +2,10 @@ const { app, BrowserWindow, net, protocol, crashReporter } = require('electron')
 const path = require('path');
 const { pathToFileURL } = require('url');
 const logger = require('./logger')
-const { compressLogFilesToZip, formatDate } = require('./utils');
+const { compressLogFilesToZip, getLogDirectory, formatDate, sendToRenderer, ipcMainOn, ipcMainInvoke} = require('./utils');
+
+logger.info('日志文件存储目录: ', getLogDirectory())
+logger.debug('应用启动时间: ', formatDate(new Date(), 'datetime', true));
 
 // 是否是开发环境
 const isDev = !app.isPackaged;
@@ -53,7 +56,30 @@ protocol.registerSchemesAsPrivileged([
     { scheme: 'app', privileges: { secure: true, standard: true, stream: true } }
 ])
 
-function createWindow() {
+function createOtherWindow() {
+    const win = new BrowserWindow({
+        width: 500,
+        height: 500,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: true,
+            contextIsolation: true,
+        },
+    });
+
+    win.loadURL('http://localhost:5173/other');
+
+    win.webContents.on('did-finish-load', () => {
+        logger.info('did-finish-load callback 触发，Loaded URL:', win.webContents.getURL());
+    });
+
+    win.once('ready-to-show', () => {
+        logger.info('ready-to-show 事件触发');
+        sendToRenderer(win, 'readyToShow', 'test other window')
+    })
+}
+
+function createMainWindow() {
     logger.info('preload.js 的加载路径:', path.join(__dirname, 'preload.js'));
     const win = new BrowserWindow({
         width: 800,
@@ -61,7 +87,7 @@ function createWindow() {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: true,
-            contextIsolation: false,
+            contextIsolation: true,
         },
     });
 
@@ -84,7 +110,26 @@ function createWindow() {
         }, 5000);
     });
 
+    win.once('ready-to-show', () => {
+        logger.info('ready-to-show 事件触发');
+        sendToRenderer(win, 'readyToShow', 1, 2, 3)
+    })
+
 }
+
+ipcMainOn('createTestWindow', () => {
+    logger.info('ipcMainOn createTestWindow callback');
+    createOtherWindow();
+})
+
+ipcMainOn('testToMain', (event, ...args) => {
+    logger.info('ipcMainOn testToMain callback:', ...args);
+});
+
+ipcMainInvoke('testToMainWithResponse', (event, ...args) => {
+    logger.info('ipcMainOn testToMainWithResponse callback:', ...args);
+    return 'testToMainWithResponse response';
+})
 
 app.on('ready', () => {
 
@@ -110,7 +155,7 @@ app.on('ready', () => {
     //     callback({ path: filePath });
     // });
 
-    createWindow();
+    createMainWindow();
 });
 
 app.on('window-all-closed', () => {
@@ -121,7 +166,7 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
+        createMainWindow();
     }
 });
 

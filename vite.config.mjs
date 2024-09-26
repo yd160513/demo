@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import * as path from "node:path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -8,6 +9,12 @@ export default defineConfig({
     build: {
         outDir: 'dist/web', // 输出目录
         emptyOutDir: true, // 在构建之前清空输出目录
+        rollupOptions: {
+            input: {
+                index: path.resolve(__dirname, 'index.html'),
+                other: path.resolve(__dirname, 'other.html')
+            }
+        }
     },
     // 使用 sass
     css: {
@@ -16,5 +23,11 @@ export default defineConfig({
           api: 'modern-compiler'
         }
       }
+    },
+    resolve: {
+        alias: {
+            '@renderer': path.resolve(__dirname, 'src/renderer'),
+            '@main': path.resolve(__dirname, 'src/main'),
+        }
     }
 })

@@ -26,4 +26,6 @@ logger.transports.file.resolvePathFn = (variables, message) => {
     return logPath
 }
 
+logger.info('logger initialized ================');
+
 module.exports = logger

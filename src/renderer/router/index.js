@@ -3,7 +3,13 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 const routes = [
     {
         path: '/',
-        component: () => import('../pages/menus.vue')
+        redirect: '/menus',
+        component: () => import('../pages/index/index.vue')
+    },
+    {
+        path: '/menus',
+        name: 'menus',
+        component: () => import('../pages/index/components/menus.vue')
     },
     {
         path: '/watermark',
@@ -14,6 +20,11 @@ const routes = [
         path: '/theme',
         name: 'theme',
         component: () => import('../components/theme.vue')
+    },
+    {
+        path: '/other',
+        name: 'other',
+        component: () => import('../pages/other/index.vue')
     }
 ]
 

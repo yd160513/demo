@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { ipcMain } = require('electron');
 const archiver = require("archiver");
 const logger = require('./logger')
 const packageJson = require('../../package.json');
@@ -155,10 +156,31 @@ const formatDate = (date, formatter, isPad = false) => {
     return formattedDate
 }
 
+// 主进程向渲染进程发送消息
+const sendToRenderer = (window, channel, ...data) => {
+    logger.info(`[ipcMain] send, channel=${channel}, args: `, ...data);
+    window.webContents.send(channel, ...data);
+}
+
+// 主进程通过 on 监听渲染进程发来的消息
+const ipcMainOn = (channel, callback) => {
+    logger.info(`[ipcMain] on, channel=${channel}`);
+    ipcMain.on(channel, callback);
+}
+
+// 主进程通过 invoke 监听渲染进程发来的消息
+const ipcMainInvoke = (channel, callback) => {
+    logger.info(`[ipcMain] invoke, channel=${channel}`);
+    ipcMain.handle(channel, callback);
+}
+
 module.exports = {
     removeSync,
     getLogDirectory,
     deleteOldLogs,
     compressLogFilesToZip,
     formatDate,
+    sendToRenderer,
+    ipcMainOn,
+    ipcMainInvoke
 }
