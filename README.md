@@ -10,7 +10,7 @@
   - [x] 日志收集
   - [x] 崩溃、异常采集
   - [x] 进程间通信
-  - [ ] 打包不同 oem
+  - [ ] 打包不同项目版本
   - [ ] sqlite 的相关配置
   - [x] 主进程热更新
   - [ ] 新老版本不同协议间的配置同步
@@ -377,3 +377,62 @@ vite 配置文件 vite.config.js 以 js 结尾，vite 会默认采用 CommonJS �
 ### 渲染进程和渲染进程之间
 不通过主进程转发，直接利用 [BroadcastChannel](https://developer.mozilla.org/zh-CN/docs/Web/API/BroadcastChannel) 广播的形式渲染进程直接通信。
 
+## BrowserWindow 中 icon 属性的影响范围
+- 窗口的标题栏：在窗口的左上角（在 macOS 上）或左上角（在 Windows 和 Linux 上）。
+- 任务栏：在 Windows 上，窗口的图标会显示在任务栏中。
+- Alt+Tab 切换窗口时：在 Windows 和 Linux 上，使用 Alt+Tab 切换窗口时会显示窗口的图标
+
+## 开发环境下 Dock 栏图标如何设置
+```js
+app.on('ready', () => {
+    // 设置 Dock 图标
+    app.dock.setIcon(appIcon);
+
+});
+```
+
+## package.json 中增加 `"postinstall": "electron-builder install-app-deps"`
+> To ensure your native dependencies are always matched electron version, simply add script To ensure your native dependencies are always matched electron version, simply add script "postinstall": "electron-builder install-app-deps" to your package.json.
+
+要确保您的本机依赖项始终匹配电子版本，只需添加脚本要确保您的本机依赖项始终匹配电子版本，只需添加脚本 "postinstall": "electron-builder install-app-deps" 给你的 package.json 。
+> “本机依赖项始终与 Electron 版本匹配”指的是确保你的项目中使用的所有本机模块（如那些使用 node-gyp 编译的模块）与当前使用的 Electron 版本兼容。由于 Electron 使用了自定义的 Node.js 版本和 V8 引擎，直接使用 npm 安装的本机模块可能与 Electron 不兼容。因此，需要重新编译这些本机模块以确保它们与 Electron 版本匹配。
+
+## 打包不同项目版本
+> 具体实现: [build-multiple-versions.js](https://github.com/yd160513/demo/blob/main/scripts/build-multiple-versions.js)  
+
+### 整体流程:
+每个版本会有对应的配置，遍历配置，将版本的配置覆盖 electron-builder 的配置，依次执行 build 命令。
+
+#### 1. 定义多个版本的配置。
+```js
+// 定义多个版本的配置
+const versions = [
+    { name: 'demo-v1', version: '0.0.1', appId: 'com.demo.app.v1' },
+    { name: 'demo-v2', version: '0.0.2', appId: 'com.demo.app.v2' },
+    // 可以继续添加更多版本
+];
+```
+#### 2. 定义脚本，遍历版本配置，将版本的配置覆盖 electron-builder 的配置，依次执行打包命令。
+```js
+// 读取 package.json 文件
+const packageJsonPath = path.resolve(__dirname, './../package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+
+versions.forEach((config) => {
+  // 修改 package.json 中的字段
+  packageJson.name = config.name;
+  packageJson.version = config.version;
+  packageJson.build.appId = config.appId;
+  packageJson.build.directories.output = `dist/pc/${config.name}-v${config.version}`;
+
+  // 写回 package.json 文件
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf-8');
+
+  // 执行打包命令
+  try {
+    execSync('npm run build:pc', { stdio: 'inherit' });
+  } catch (error) {
+    console.error(`打包 ${config.name} 失败:`, error);
+  }
+});
+```
